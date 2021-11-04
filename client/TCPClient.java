@@ -51,9 +51,9 @@ public class TCPClient {
 
     /**
      * Creates and sends a client hello, then validates the server's response to the client hello.
-     * @param name Name of the client
-     * @param host Host of the server to communicate with
-     * @param port Post of the server to communicate with
+     * @param name Name of the client.
+     * @param host Host of the server to communicate with.
+     * @param port Port of the server to communicate with.
      * @throws Exception If the server leaves abruptly and the client cannot read or send messages anymore.
      */
     public TCPClient(String name, String host, Integer port) throws Exception {

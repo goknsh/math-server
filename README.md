@@ -20,7 +20,7 @@ $ javac .\server\Main.java ; java server.Main
 ```
 
 ## Client
-The client a simple TCP sends mathematical expressions to be evaluated and displays the server's response. All the client code is located in the `client` directory.
+The client is a simple TCP client that sends mathematical expressions to be evaluated to the server and displays the server's response. All the client code is located in the `client` directory.
 
 The client may be started with this command from the root of this project:
 ```sh

@@ -31,7 +31,7 @@ class TCPServerThread extends Thread {
         this.connectionEstablished = new Date();
         this.client = client;
         this.name = name;
-        this.keepAlive = true;
+        this.keepAlive = true; // TODO: Design decision: keep this? Since it is only used in run()
     }
 
     /**
@@ -43,7 +43,7 @@ class TCPServerThread extends Thread {
             BufferedReader inFromClient = new BufferedReader(new InputStreamReader(client.getInputStream()));
             DataOutputStream outToClient = new DataOutputStream(client.getOutputStream());
             Map<String, String> input;
-            while (keepAlive) {
+            while (this.keepAlive) {
                 input = Protocol.unmarshal(inFromClient.readLine());
                 if (Objects.equals(input.get("cmd"), "math")) {
                     // TODO: Log command
@@ -53,7 +53,7 @@ class TCPServerThread extends Thread {
                     // TODO: Log exit and dates connection started and ended
                     this.keepAlive = false;
                     outToClient.writeBytes(buildClientExitACK());
-                    client.close();
+                    this.client.close();
                     System.out.println("Client has left: " + this.name);
                     Date connectionClosed = new Date();
                 }
@@ -97,7 +97,7 @@ class TCPServerThread extends Thread {
  */
 public class TCPServer {
     /**
-     * Constructor for this class, starts a TCP server, then creates an infinite loop to listen and ACK for client hellos, then create a thread to handle all future client requests.
+     * Constructor for this class, starts a TCP server, then creates an infinite loop to listen and ACK for client hellos, then creates a thread to handle all future client requests.
      * @param port Port on which the server listens to incoming requests.
      * @throws Exception If a client leaves abruptly and the server cannot read or send messages anymore.
      */
