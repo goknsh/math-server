@@ -65,9 +65,115 @@ class TCPServerThread extends Thread {
         }
     }
 
+    public boolean isDigit(char d)
+    {
+        if(d >= 48 && d <= 57){ return true; }
+        return false;
+    }
+
+    public boolean isOperation(char op)
+    {
+        if(op == '*' || op == '/' || op == '%' || op == '!' || op == '^' || op == '+' || op == '-') { return true; }
+        return false;
+    }
+
     // TODO: Waiting on response from professor to check if a "global" evaluator needs to be implemented to satisfy requirement #5 of the server application
     public String evaluateEquation(String equation) {
-        return "NOT_YET_IMPLEMENTED";
+        String arg1 = "null";
+        char operator = '#';
+        String arg2 = "null";
+        String result = "null";
+        
+        int nextIndex = 0;
+        boolean foundDecimal = false;
+        String errorMessage = "";
+
+        // Parsing first argument and the operator
+        for (int i = 0; i < equation.length(); i++) {
+            if(isDigit(equation.charAt(i)))
+            {
+                arg1+=equation.charAt(i);               // Append digit to first argument
+            }
+            else if(equation.charAt(i)=='.')
+            {
+                if(foundDecimal==false)
+                {
+                    foundDecimal = true;
+                    arg1+=equation.charAt(i);           // Appends decimal to argument, but only if it's the first decimal found in this number
+                }
+                else{
+                    arg1+=equation.charAt(i);
+                    errorMessage = "Error - Too many decimal points in first argument. {" + arg1 + "}";
+                }
+            }
+            else if(isOperation(equation.charAt(i)))
+            {
+                operator = equation.charAt(i);
+            }
+            else{
+                errorMessage = "Error - Unrecognized symbol. {"+ equation.charAt(i) + "} Please use only digits, operators, and decimal points.";
+            }
+
+            if(errorMessage!="" || operator != '#')     // If operator is found or an error occured, exit the loop.
+            {
+                nextIndex = i+1;
+                break;
+            }
+        }
+
+        /* Commented out for testing. Return to actual code later
+        if(errorMessage!="")
+        {
+            return(errorMessage); // If error occured, return it instead of result
+        }
+        */
+
+        foundDecimal = false;   // Resets count for the second argument
+        
+        // Parsing second argument
+        for (int i = nextIndex; i < equation.length(); i++)
+        {
+            if(isDigit(equation.charAt(i)))
+            {
+                arg2+=equation.charAt(i);
+            }
+            else if(equation.charAt(i)=='.')
+            {
+                if(foundDecimal==false)
+                {
+                    foundDecimal = true;
+                    arg2+=equation.charAt(i);
+                }
+                else{
+                    arg2+=equation.charAt(i);
+                    errorMessage = "Error - Too many decimal points in second argument. {" + arg2 + "}";
+                }
+            }
+            else if(isOperation(equation.charAt(i)))
+            {
+                errorMessage = "Error - Too many operators. {" + operator + ", " + equation.charAt(i) + "}";
+            }
+            else{
+                errorMessage = "Error - Unrecognized symbol. {"+ equation.charAt(i) + "} Please use only digits, operators, and decimal points.";
+            }
+
+            // This loop will stop when all of the digits are successfully processed or an error occurs.
+            if(errorMessage!="")
+            {
+                break;
+            }
+        }
+        
+        /* Commented out for testing. Return to actual code later
+        if(errorMessage!="")
+        {
+            return(errorMessage); // If error occured, return it instead of result
+        }
+        */
+
+        return("1st arg: " + arg1 + ", Operator: " + operator + ", 2nd arg: " + arg2 + ", Error msg: " + errorMessage);         // DEBUG
+
+        // TODO : ACTUAL CALCULATION PART
     }
 
     /**

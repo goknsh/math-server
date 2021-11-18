@@ -79,7 +79,7 @@ public class TCPClient {
         }
     }
 
-    // TODO: Implement
+    // TODO: Implement (heyo)
     public String buildAndSendMathCommand(String rawInput) {
         return "NOT_YET_IMPLEMENTED";
     }
