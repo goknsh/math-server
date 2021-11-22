@@ -73,7 +73,7 @@ class TCPServerThread extends Thread {
 
     public boolean isOperation(char op)
     {
-        if(op == '*' || op == '/' || op == '%' || op == '!' || op == '^' || op == '+' || op == '-') { return true; }
+        if(op == '*' || op == '/' || op == '%' || op == '^' || op == '+' || op == '-') { return true; }
         return false;
     }
 
@@ -82,7 +82,6 @@ class TCPServerThread extends Thread {
         String arg1 = "null";
         char operator = '#';
         String arg2 = "null";
-        String result = "null";
         
         int nextIndex = 0;
         boolean foundDecimal = false;
@@ -171,9 +170,44 @@ class TCPServerThread extends Thread {
         }
         */
 
-        return("1st arg: " + arg1 + ", Operator: " + operator + ", 2nd arg: " + arg2 + ", Error msg: " + errorMessage);         // DEBUG
+        // Try to parse floats from the arguments
+        float argf1, argf2;
+        
+        try{
+            argf1 =  Float.parseFloat(arg1);
+        }
+        catch (Exception e)
+        {
+            errorMessage = "Error - Failed to parse float from arg1. {" + e + "}";
+            return errorMessage;
+        }
 
-        // TODO : ACTUAL CALCULATION PART
+        try{
+            argf2 =  Float.parseFloat(arg2);
+        }
+        catch (Exception e)
+        {
+            errorMessage = "Error - Failed to parse float from arg2. {" + e + "}";
+            return errorMessage;
+        }
+
+        float resultf = null;
+
+        // Perform operation based on operator
+
+        switch(operator){
+            case '*': resultf = argf1 * argf2; break;
+            case '/': resultf = argf1 / argf2; break;
+            case '%': resultf = argf1 % argf2; break;
+            case '^': resultf = Math.pow(argf1, argf2); break;
+            case '+': resultf = argf1 + argf2; break;
+            case '-': resultf = argf1 - argf2; break;
+            default: errorMessage = "Error - Unrecognized operator in evaluation step. {" + operator + "}"; return errorMessage;
+        }
+
+        //return resultf; Commented out for testing
+
+        return("1st arg: " + arg1 + ", Operator: " + operator + ", 2nd arg: " + arg2 + ", Error msg: " + errorMessage);         // DEBUG
     }
 
     /**
