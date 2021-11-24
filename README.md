@@ -6,13 +6,20 @@
 |__|_|  (____  /__| |___|  /         /____  >\___  >__|    \_/  \___  >__|
       \/     \/          \/               \/     \/                 \/
 ```
-A multi-threaded server that evaluates mathematical expressions.
+A single-threaded server that evaluates mathematical expressions.
 
 ## Requirements
-* JDK 14.0.2
+* Java SE 8u251 (`1.8.0_251`, build `08`)
+
+## Docs
+The code has comments throught. Additionally, we use JavaDoc to document the classes and functions. You can generate the JavaDoc with this command from the root of this project:
+```sh
+$ javadoc -private -splitindex -d .\docs\javadoc .\server\TCPServer.java .\server\Main.java .\client\TCPClient.java .\client\Main.java .\lib\Protocol.java
+```
+From there, a `docs/javadoc` directory will be created. You can then open `docs/javadoc/index.html` to browse the documentation.
 
 ## Server
-The server is a multi-threaded TCP server that evaluates mathematical expressions. All the server code is located in the `server` directory.
+The server is a single-threaded TCP server that evaluates mathematical expressions. All the server code is located in the `server` directory.
 
 The server may be started with this command from the root of this project:
 ```sh

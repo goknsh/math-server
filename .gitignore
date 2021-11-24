@@ -16,3 +16,6 @@
 # IntelliJ
 *.iml
 out
+
+# JavaDoc
+docs/javadoc

@@ -2,7 +2,11 @@ package client;
 
 import lib.Protocol;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +20,7 @@ class ShutdownHook extends Thread {
 
     /**
      * Constructor for this class, simply stores the TCPClient class so that it can send and receive a response to the client exit command.
+     *
      * @param client Client on behalf of whom an exit command will be sent.
      */
     public ShutdownHook(TCPClient client) {
@@ -51,41 +56,49 @@ public class TCPClient {
 
     /**
      * Creates and sends a client hello, then validates the server's response to the client hello.
+     *
      * @param name Name of the client.
      * @param host Host of the server to communicate with.
      * @param port Port of the server to communicate with.
      * @throws Exception If the server leaves abruptly and the client cannot read or send messages anymore.
      */
     public TCPClient(String name, String host, Integer port) throws Exception {
-        Map<String, String> clientHelloACK;
-        Socket serverSocket = new Socket(host, port);
+        try {
+            Map<String, String> clientHelloACK;
+            Socket serverSocket = new Socket(host, port);
 
-        DataOutputStream outToServer = new DataOutputStream(serverSocket.getOutputStream());
-        BufferedReader inFromServer = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
+            DataOutputStream outToServer = new DataOutputStream(serverSocket.getOutputStream());
+            BufferedReader inFromServer = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
 
-        outToServer.writeBytes(buildClientHello(name));
-        clientHelloACK = Protocol.unmarshal(inFromServer.readLine());
+            outToServer.writeBytes(buildClientHello(name));
+            clientHelloACK = Protocol.unmarshal(inFromServer.readLine());
 
-        if (Objects.equals(clientHelloACK.get("resp"), "Hello, " + name)) {
-            this.server = serverSocket;
-            this.name = name;
-            this.outToServer = outToServer;
-            this.inFromServer = inFromServer;
+            if (Objects.equals(clientHelloACK.get("resp"), "Hello, " + name)) {
+                this.server = serverSocket;
+                this.name = name;
+                this.outToServer = outToServer;
+                this.inFromServer = inFromServer;
 
-            Runtime.getRuntime().addShutdownHook(new ShutdownHook(this));
-        } else {
-            serverSocket.close();
-            throw new Exception("Server sent incorrect acknowledgement");
+                Runtime.getRuntime().addShutdownHook(new ShutdownHook(this));
+            } else {
+                serverSocket.close();
+                throw new Exception("Server sent incorrect acknowledgement");
+            }
+        } catch (ConnectException e) {
+            System.out.println("Could not connect to server. This typically occurs because the connection was refused remotely (e.g., no process is listening on the remote address/port).");
+            System.exit(1);
         }
     }
 
     // TODO: Implement (heyo)
-    public String buildAndSendMathCommand(String rawInput) {
-        return "NOT_YET_IMPLEMENTED";
+    public String buildAndSendMathCommand(String rawInput) throws IOException {
+        this.outToServer.writeBytes(buildClientMathCommand(rawInput));
+        return Protocol.unmarshal(this.inFromServer.readLine()).get("resp");
     }
 
     /**
      * Builds a marshalled client hello.
+     *
      * @param name Name of the client to send to the server.
      * @return Marshalled client hello, ready to be directly sent.
      */
@@ -98,6 +111,7 @@ public class TCPClient {
 
     /**
      * Builds a marshalled math command.
+     *
      * @param eq Equation the client wants the server to evaluate.
      * @return Marshalled math command, ready to be directly sent.
      */
@@ -110,6 +124,7 @@ public class TCPClient {
 
     /**
      * Builds a marshalled exit command.
+     *
      * @return Marshalled exit command, ready to be directly sent.
      */
     public String buildClientExitCommand() {
@@ -121,6 +136,7 @@ public class TCPClient {
 
     /**
      * Get the privately stored name of this client.
+     *
      * @return Name of this client.
      */
     public String getName() {

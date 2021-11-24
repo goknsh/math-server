@@ -1,5 +1,6 @@
 package client;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 /**
@@ -13,8 +14,8 @@ public class Main {
                 " /     \\\\__  \\\\   __\\  |  \\   ______  /  ___// __ \\_  __ \\  \\/ // __ \\_  __ \\\n" +
                 "|  Y Y  \\/ __ \\|  | |   Y  \\ /_____/  \\___ \\\\  ___/|  | \\/\\   /\\  ___/|  | \\/\n" +
                 "|__|_|  (____  /__| |___|  /         /____  >\\___  >__|    \\_/  \\___  >__|   \n" +
-                "      \\/     \\/          \\/               \\/     \\/                 \\/       \n\n"+
-                "A multi-threaded server that evaluates mathematical expressions.\n\n");
+                "      \\/     \\/          \\/               \\/     \\/                 \\/       \n\n" +
+                "A single-threaded server that evaluates mathematical expressions.\n\n");
         System.out.print("Provide your name to connect to the server: ");
         String name = reader.nextLine();
 
@@ -23,9 +24,35 @@ public class Main {
         System.out.println("Connection established. Hello, " + name);
 
         while (true) {
-            System.out.println("\nPress Ctrl+C to quit at any time");
+            System.out.println("\nPress Ctrl+C or send 'quit' to quit");
             System.out.print(client.getName() + "@math-server> ");
-            System.out.println("Response: " + client.buildAndSendMathCommand(reader.nextLine()));
+            String command = reader.nextLine();
+            if ((command.getBytes(StandardCharsets.UTF_8)).length < 1024) {
+                switch (command) {
+                    case "exit":
+                    case "e":
+                    case "quit":
+                    case "q": {
+                        System.exit(0);
+                        break;
+                    }
+                    case "help":
+                    case "h":
+                    case "usage": {
+                        System.out.println("exit or quit to close the program\n" +
+                                "any other unrecognized command is considered a mathematical expression and sent to the server\n" +
+                                "help or usage to print this message\n");
+                        break;
+                    }
+                    default: {
+                        System.out.println("Response: " + client.buildAndSendMathCommand(command));
+                        break;
+
+                    }
+                }
+            } else {
+                System.out.println("Error: Command cannot exceed 1024 bytes in length.");
+            }
         }
     }
 }
