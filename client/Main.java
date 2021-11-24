@@ -26,32 +26,34 @@ public class Main {
         while (true) {
             System.out.println("\nPress Ctrl+C or send 'quit' to quit");
             System.out.print(client.getName() + "@math-server> ");
-            String command = reader.nextLine();
-            if ((command.getBytes(StandardCharsets.UTF_8)).length < 1024) {
-                switch (command) {
-                    case "exit":
-                    case "e":
-                    case "quit":
-                    case "q": {
-                        System.exit(0);
-                        break;
-                    }
-                    case "help":
-                    case "h":
-                    case "usage": {
-                        System.out.println("exit or quit to close the program\n" +
-                                "any other unrecognized command is considered a mathematical expression and sent to the server\n" +
-                                "help or usage to print this message\n");
-                        break;
-                    }
-                    default: {
-                        System.out.println("Response: " + client.buildAndSendMathCommand(command));
-                        break;
+            if (reader.hasNextLine()) {
+                String command = reader.nextLine();
+                if ((command.getBytes(StandardCharsets.UTF_8)).length < 1024) {
+                    switch (command) {
+                        case "exit":
+                        case "e":
+                        case "quit":
+                        case "q": {
+                            System.exit(0);
+                            break;
+                        }
+                        case "help":
+                        case "h":
+                        case "usage": {
+                            System.out.println("exit or quit to close the program\n" +
+                                    "any other unrecognized command is considered a mathematical expression and sent to the server\n" +
+                                    "help or usage to print this message\n");
+                            break;
+                        }
+                        default: {
+                            System.out.println("Response: " + client.buildAndSendMathCommand(command));
+                            break;
 
+                        }
                     }
+                } else {
+                    System.out.println("Error: Command cannot exceed 1024 bytes in length.");
                 }
-            } else {
-                System.out.println("Error: Command cannot exceed 1024 bytes in length.");
             }
         }
     }
