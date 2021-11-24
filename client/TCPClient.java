@@ -16,6 +16,9 @@ import java.util.Objects;
  * Class (shutdown hook) to gracefully send the server a client exit command and quit.
  */
 class ShutdownHook extends Thread {
+    /**
+     * The client on which the shutdown hook is to be executed.
+     */
     private TCPClient client;
 
     /**
@@ -49,9 +52,17 @@ class ShutdownHook extends Thread {
  * Class to establish a connection and communicate with the server.
  */
 public class TCPClient {
+    /**
+     * Data stream to write to the server.
+     */
     public DataOutputStream outToServer;
+    /**
+     * Data stream to receive from the server.
+     */
     public BufferedReader inFromServer;
-    private Socket server;
+    /**
+     * Name of this client, as specified by the user.
+     */
     private String name;
 
     /**
@@ -74,7 +85,6 @@ public class TCPClient {
             clientHelloACK = Protocol.unmarshal(inFromServer.readLine());
 
             if (Objects.equals(clientHelloACK.get("resp"), "Hello, " + name)) {
-                this.server = serverSocket;
                 this.name = name;
                 this.outToServer = outToServer;
                 this.inFromServer = inFromServer;
