@@ -90,8 +90,15 @@ public class TCPClient {
         }
     }
 
-    public String buildAndSendMathCommand(String rawInput) throws IOException {
-        this.outToServer.writeBytes(buildClientMathCommand(rawInput));
+    /**
+     * Builds and sends a math command to the server. Returns the server's response.
+     *
+     * @param input Math expression for the server to evaluate.
+     * @return Server's response to the math command.
+     * @throws IOException In case we cannot read a line from the server.
+     */
+    public String buildAndSendMathCommand(String input) throws IOException {
+        this.outToServer.writeBytes(buildClientMathCommand(input));
         return Protocol.unmarshal(this.inFromServer.readLine()).get("resp");
     }
 
