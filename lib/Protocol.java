@@ -11,9 +11,9 @@ import java.util.Map;
  */
 public class Protocol {
     /**
-     * Converts a `Map` of `Strings` to a URL encoded string ready to be sent to the client/server.
+     * Converts a <code>Map</code> of <code>String</code>s to a URL encoded string ready to be sent to the client/server.
      *
-     * @param map `Map` of `Strings` to convert.
+     * @param map <code>Map</code> of <code>String</code>s to convert.
      * @return URL encoded string.
      */
     public static String marshal(Map<String, String> map) {
@@ -29,10 +29,10 @@ public class Protocol {
     }
 
     /**
-     * Converts a URL encoded string to a `Map` of `Strings` ready to be used by the client/server.
+     * Converts a URL encoded string to a <code>Map</code> of <code>String</code>s ready to be used by the client/server.
      *
      * @param string URL encoded string to convert.
-     * @return `Map` of `Strings`.
+     * @return <code>Map</code> of <code>String</code>s.
      */
     public static Map<String, String> unmarshal(String string) {
         while (string.endsWith("\n")) string = string.substring(0, string.length() - 1);

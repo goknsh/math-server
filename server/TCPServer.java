@@ -33,7 +33,7 @@ class CommandStore {
     /**
      * Creates/Updates a client's command string.
      *
-     * @param key Client to which the command is associated.
+     * @param key   Client to which the command is associated.
      * @param value Command which is client is sending.
      * @throws IOException If the socket is closed.
      */
@@ -136,9 +136,9 @@ public class TCPServer {
      * Read bytes from a SocketChannel into a buffer, then converts and returns a UTF-8 string
      *
      * @param client Client from which bytes must be read.
-     * @param size Size of the buffer into which all available bytes will be read.
-     * @throws IOException If the socket can no longer be read from.
+     * @param size   Size of the buffer into which all available bytes will be read.
      * @return Converted string from the buffer.
+     * @throws IOException If the socket can no longer be read from.
      */
     private String readFromBuffer(SocketChannel client, int size) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(size);

@@ -49,10 +49,10 @@ class ShutdownHook extends Thread {
  * Class to establish a connection and communicate with the server.
  */
 public class TCPClient {
-    private Socket server;
-    private String name;
     public DataOutputStream outToServer;
     public BufferedReader inFromServer;
+    private Socket server;
+    private String name;
 
     /**
      * Creates and sends a client hello, then validates the server's response to the client hello.
