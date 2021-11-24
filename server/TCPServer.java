@@ -193,9 +193,9 @@ public class TCPServer {
     }
 
     public String evaluateEquation(String equation) {
-        String arg1 = "null";
+        String arg1 = "";
         char operator = '#';
-        String arg2 = "null";
+        String arg2 = "";
 
         int nextIndex = 0;
         boolean foundDecimal = false;
@@ -226,14 +226,12 @@ public class TCPServer {
             }
         }
 
-        /* Commented out for testing. Return to actual code later
         if(errorMessage!="")
         {
-            return(errorMessage); // If error occured, return it instead of result
+            return(errorMessage);   // If error occured, return it instead of result
         }
-        */
 
-        foundDecimal = false;   // Resets count for the second argument
+        foundDecimal = false;       // Resets count for the second argument
 
         // Parsing second argument
         for (int i = nextIndex; i < equation.length(); i++) {
@@ -259,12 +257,10 @@ public class TCPServer {
             }
         }
 
-        /* Commented out for testing. Return to actual code later
         if(errorMessage!="")
         {
             return(errorMessage); // If error occured, return it instead of result
         }
-        */
 
         // Try to parse floats from the arguments
         float argf1, argf2;
@@ -313,7 +309,7 @@ public class TCPServer {
 
         //return resultf; Commented out for testing
 
-        return ("1st arg: " + arg1 + ", Operator: " + operator + ", 2nd arg: " + arg2 + ", Error msg: " + errorMessage);         // DEBUG
+        return ("1st arg: " + arg1 + ", Operator: " + operator + ", 2nd arg: " + arg2 + ", Result: " + resultf + ", Error msg: " + errorMessage);         // DEBUG
     }
 
 }
