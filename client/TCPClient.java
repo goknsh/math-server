@@ -90,7 +90,6 @@ public class TCPClient {
         }
     }
 
-    // TODO: Implement (heyo)
     public String buildAndSendMathCommand(String rawInput) throws IOException {
         this.outToServer.writeBytes(buildClientMathCommand(rawInput));
         return Protocol.unmarshal(this.inFromServer.readLine()).get("resp");
