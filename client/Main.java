@@ -24,7 +24,8 @@ public class Main {
         System.out.println("Connection established. Hello, " + name);
 
         while (true) {
-            System.out.println("\nPress Ctrl+C or send 'quit' to quit");
+            System.out.println("\nEnter a simple equation. (Operators: *, /, +, -, ^, %, !)");
+            System.out.println("\nYou may send 'quit' or press Ctrl+C to quit.");
             System.out.print(client.getName() + "@math-server> ");
 
             while (!reader.hasNextLine()) {
@@ -37,6 +38,7 @@ public class Main {
                     case "e":
                     case "quit":
                     case "q": {
+                        reader.close();
                         System.exit(0);
                         break;
                     }

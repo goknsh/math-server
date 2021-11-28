@@ -216,13 +216,13 @@ public class TCPServer {
 
     /**
      * Determines if a given character is an operation symbol supported by the program.
-     * The supported operations are multiplication, division, addition, subtraction, exponentiation, and modulo.
+     * The supported operations are multiplication, division, addition, subtraction, exponentiation, modulo, and factorial.
      * 
      * @param op Character to be analyzed.
      * @return True if the character is a supported operation symbol, false otherwise.
      */
     public boolean isOperation(char op) {
-        return op == '*' || op == '/' || op == '+' || op == '-' || op == '%' || op == '^';
+        return op == '*' || op == '/' || op == '+' || op == '-' || op == '%' || op == '^' || op == '!';
     }
 
     /**
@@ -296,8 +296,12 @@ public class TCPServer {
             }
         }
 
-        if(errorMessage!="")
-        {
+        if(operator == '!' && arg2 != "") {
+            errorMessage = "Error - Found second argument for factorial. {" + arg2 + "} Please use only one integer argument, followed by '!'.";
+        }
+
+
+        if(errorMessage!="") {
             return(errorMessage); // If error occured, return it instead of result
         }
 
@@ -311,11 +315,16 @@ public class TCPServer {
             return errorMessage;
         }
 
-        try {
-            argf2 = Float.parseFloat(arg2);
-        } catch (Exception e) {
-            errorMessage = "Error - Failed to parse float from arg2. {" + e + "}";
-            return errorMessage;
+        if(operator != '!') {
+            try {
+                argf2 = Float.parseFloat(arg2);
+            } catch (Exception e) {
+                errorMessage = "Error - Failed to parse float from arg2. {" + e + "}";
+                return errorMessage;
+            }
+        }
+        else{
+            argf2 = 0f;
         }
 
         float resultf = 0;
@@ -329,8 +338,14 @@ public class TCPServer {
                 resultf = argf1 / argf2;
                 break;
             case '%':
-                resultf = argf1 % argf2;
-                break;
+                if(argf2 == 0f)
+                {
+                    return "Undefined";
+                }
+                else{
+                    resultf = argf1 % argf2;
+                    break;
+                }
             case '^':
                 resultf = (float) Math.pow(argf1, argf2);
                 break;
@@ -340,6 +355,18 @@ public class TCPServer {
             case '-':
                 resultf = argf1 - argf2;
                 break;
+            case '!':
+                if(argf1 % 1 == 0 && argf1 >= 0){
+                    resultf = 1.0f;
+                    for(int i = 1; i <= (int) argf1; i++){
+                        resultf = Math.round(resultf*i);
+                    }
+                    break;
+                }
+                else{
+                    errorMessage = "Error - The argument for factorial must be a positive integer >= 0. {" + argf1 + "}";
+                    return errorMessage;
+                }
             default:
                 errorMessage = "Error - Unrecognized operator in evaluation step. {" + operator + "}";
                 return errorMessage;
