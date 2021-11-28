@@ -25,6 +25,9 @@ import java.util.logging.Logger;
  * Class to store unfinished commands from clients.
  */
 class CommandStore {
+    /**
+     * <code>SocketAddress</code>es are mapped to their unfinished commands, stored as <code>String</code>s.
+     */
     private Map<SocketAddress, String> store;
 
     /**
@@ -201,14 +204,29 @@ public class TCPServer {
         return ByteBuffer.wrap(Protocol.marshal(mapResponse).getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * TODO: Description.
+     * @param d TODO: Description.
+     * @return TODO: Description.
+     */
     public boolean isDigit(char d) {
         return d >= 48 && d <= 57;
     }
 
+    /**
+     * TODO: Description.
+     * @param op TODO: Description.
+     * @return TODO: Description.
+     */
     public boolean isOperation(char op) {
         return op == '*' || op == '/' || op == '%' || op == '^' || op == '+' || op == '-';
     }
 
+    /**
+     * TODO: Description.
+     * @param equation  TODO: Description.
+     * @return  TODO: Description.
+     */
     public String evaluateEquation(String equation) {
         String arg1 = "";
         char operator = '#';
