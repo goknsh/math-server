@@ -16,6 +16,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class to store unfinished commands from clients.
@@ -68,6 +72,8 @@ class CommandStore {
  * Class to accept connections and service future client requests.
  */
 public class TCPServer {
+    private static final Logger serverLogger = Logger.getLogger(TCPServerThread.class.getName());
+
     /**
      * Constructor for this class, starts a TCP server, then creates an infinite loop to listen and respond to client messages.
      *
@@ -75,6 +81,13 @@ public class TCPServer {
      * @throws Exception If a client leaves abruptly and the server cannot read or send messages anymore.
      */
     public TCPServer(Integer port) throws Exception {
+        // Creating handler for server logging, then adding it to the logger
+        Handler fileHandler  = new FileHandler("./TCPServer.log");
+        serverLogger.addHandler(fileHandler);
+        fileHandler.setLevel(Level.ALL);
+        serverLogger.setLevel(Level.ALL);
+        serverLogger.setUseParentHandlers(false);
+
         Selector selector = Selector.open();
         CommandStore commands = new CommandStore();
         ServerSocketChannel server = ServerSocketChannel.open();
@@ -97,7 +110,6 @@ public class TCPServer {
                 }
                 if (key.isReadable()) {
                     Thread.sleep(2000);
-                    // TODO: Log command, connect, and exit
                     SocketChannel client = (SocketChannel) key.channel();
                     String command = this.readFromBuffer(client, 2048);
                     commands.addCommand(client, command);
@@ -108,20 +120,25 @@ public class TCPServer {
                             case "hello": {
                                 client.write(buildClientHelloACK(request.get("name")));
                                 System.out.println("Client has connected: " + request.get("name"));
+                                serverLogger.log(Level.INFO, "Client joined. Name: " + request.get("name"));
                                 break;
                             }
                             case "math": {
-                                client.write(buildServerResponse(evaluateEquation(request.get("eq"))));
+                                String equationResponse = evaluateEquation(request.get("eq"));
+                                client.write(buildServerResponse(equationResponse));
+                                serverLogger.log(Level.INFO, "Client \""+ request.get("name") + "\" entered equation : " + request.get("eq") + ". Response : " + equationResponse); // TODO the request.get("name") doesn't properly return the client's name. How can we make this work?
                                 break;
                             }
                             case "exit": {
                                 client.write(buildClientExitACK(request.get("name")));
                                 client.close();
                                 System.out.println("Client has left: " + request.get("name"));
+                                serverLogger.log(Level.INFO, "Client disconnected. Name: " + request.get("name"));
                                 break;
                             }
                             default: {
                                 client.write(buildServerResponse("Unknown command"));
+                                serverLogger.log(Level.INFO, "Client \"" + request.get("name") + "\" entered unknown command: " + request.get("cmd"));  // TODO the request.get("name") doesn't properly return the client's name. How can we make this work?
                                 break;
                             }
                         }
@@ -282,7 +299,6 @@ public class TCPServer {
         float resultf = 0;
 
         // Perform operation based on operator
-
         switch (operator) {
             case '*':
                 resultf = argf1 * argf2;
@@ -306,10 +322,7 @@ public class TCPServer {
                 errorMessage = "Error - Unrecognized operator in evaluation step. {" + operator + "}";
                 return errorMessage;
         }
-
-        //return resultf; Commented out for testing
-
-        return ("1st arg: " + arg1 + ", Operator: " + operator + ", 2nd arg: " + arg2 + ", Result: " + resultf + ", Error msg: " + errorMessage);         // DEBUG
+        return Float.toString(resultf);
     }
 
 }
