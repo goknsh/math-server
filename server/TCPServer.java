@@ -12,29 +12,72 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Class to store unfinished commands from clients.
+ * Class to store data about clients and unfinished commands from clients.
  */
-class CommandStore {
+class ClientStore {
     /**
      * <code>SocketAddress</code>es are mapped to their unfinished commands, stored as <code>String</code>s.
      */
-    private Map<SocketAddress, String> store;
+    private Map<SocketAddress, String> commands;
+
+    /**
+     * <code>SocketAddress</code>es are mapped to their client's name, stored as <code>String</code>s.
+     */
+    private Map<SocketAddress, String> names;
+
+    /**
+     * <code>SocketAddress</code>es are mapped to their <code>SocketChannel</code>, used in the ShutdownHook to cleanly close client connections.
+     */
+
+    public Map<SocketAddress, SocketChannel> clients;
 
     /**
      * Constructor for this class, simply creates a new <code>HashMap</code> to store <code>SocketAddress</code> mapped to a <code>String</code>.
      */
-    public CommandStore() {
-        this.store = new HashMap<>();
+    public ClientStore() {
+        this.commands = new HashMap<>();
+        this.names = new HashMap<>();
+        this.clients = new HashMap<>();
+    }
+
+    /**
+     * Adds a client to the store. Stores the <code>SocketChannel</code> and the client's name.
+     *
+     * @param key  Client to which the name and <code>SocketChannel</code> is associated.
+     * @param name Name of the client.
+     * @throws IOException If the socket is closed.
+     */
+    public void addClient(SocketChannel key, String name) throws IOException {
+        this.clients.put(key.getLocalAddress(), key);
+        this.names.put(key.getLocalAddress(), name);
+    }
+
+    /**
+     * Removes a client from all the store.
+     *
+     * @param key  Client to remove.
+     * @throws IOException If the socket is closed.
+     */
+    public void removeClient(SocketAddress key) throws IOException {
+        this.clients.remove(key);
+        this.names.remove(key);
+        this.commands.remove(key);
+    }
+
+    /**
+     * @param key Client whose command you would like to retrieve.
+     * @return The Name of the client.
+     * @throws IOException If the socket is closed.
+     */
+    public String getName(SocketChannel key) throws IOException {
+        return this.names.get(key.getLocalAddress());
     }
 
     /**
@@ -45,7 +88,7 @@ class CommandStore {
      * @throws IOException If the socket is closed.
      */
     public void addCommand(SocketChannel key, String value) throws IOException {
-        this.store.merge(key.getLocalAddress(), value, (a, b) -> a + b);
+        this.commands.merge(key.getLocalAddress(), value, (a, b) -> a + b);
     }
 
     /**
@@ -56,7 +99,7 @@ class CommandStore {
      * @throws IOException If the socket is closed.
      */
     public String removeCommand(SocketChannel key) throws IOException {
-        return this.store.remove(key.getLocalAddress());
+        return this.commands.remove(key.getLocalAddress());
     }
 
     /**
@@ -67,7 +110,7 @@ class CommandStore {
      * @throws IOException If the socket is closed.
      */
     public Boolean isCommandComplete(SocketChannel key) throws IOException {
-        return this.store.get(key.getLocalAddress()).endsWith("\n");
+        return this.commands.get(key.getLocalAddress()).endsWith("\n");
     }
 }
 
@@ -75,7 +118,7 @@ class CommandStore {
  * Class to accept connections and service future client requests.
  */
 public class TCPServer {
-    private static final Logger serverLogger = Logger.getLogger(TCPServerThread.class.getName());
+    private static final Logger serverLogger = Logger.getLogger(TCPServer.class.getName());
 
     /**
      * Constructor for this class, starts a TCP server, then creates an infinite loop to listen and respond to client messages.
@@ -85,14 +128,14 @@ public class TCPServer {
      */
     public TCPServer(Integer port) throws Exception {
         // Creating handler for server logging, then adding it to the logger
-        Handler fileHandler  = new FileHandler("./TCPServer.log");
+        Handler fileHandler = new FileHandler("./TCPServer.log", true);
         serverLogger.addHandler(fileHandler);
         fileHandler.setLevel(Level.ALL);
         serverLogger.setLevel(Level.ALL);
         serverLogger.setUseParentHandlers(false);
 
         Selector selector = Selector.open();
-        CommandStore commands = new CommandStore();
+        ClientStore clients = new ClientStore();
         ServerSocketChannel server = ServerSocketChannel.open();
         server.bind(new InetSocketAddress(port));
         server.configureBlocking(false);
@@ -112,36 +155,39 @@ public class TCPServer {
                     client.register(selector, SelectionKey.OP_READ);
                 }
                 if (key.isReadable()) {
-                    Thread.sleep(2000);
                     SocketChannel client = (SocketChannel) key.channel();
                     String command = this.readFromBuffer(client, 2048);
-                    commands.addCommand(client, command);
+                    clients.addCommand(client, command);
 
-                    if (commands.isCommandComplete(client)) {
-                        Map<String, String> request = Protocol.unmarshal(commands.removeCommand(client));
+                    if (clients.isCommandComplete(client)) {
+                        Map<String, String> request = Protocol.unmarshal(clients.removeCommand(client));
                         switch (request.get("cmd")) {
                             case "hello": {
                                 client.write(buildClientHelloACK(request.get("name")));
                                 System.out.println("Client has connected: " + request.get("name"));
+                                clients.addClient(client, request.get("name"));
                                 serverLogger.log(Level.INFO, "Client joined. Name: " + request.get("name"));
                                 break;
                             }
                             case "math": {
                                 String equationResponse = evaluateEquation(request.get("eq"));
                                 client.write(buildServerResponse(equationResponse));
-                                serverLogger.log(Level.INFO, "Client \""+ request.get("name") + "\" entered equation : " + request.get("eq") + ". Response : " + equationResponse); // TODO the request.get("name") doesn't properly return the client's name. How can we make this work?
+                                serverLogger.log(Level.INFO, "Client \"" + clients.getName(client) + "\" entered equation : " + request.get("eq") + ". Response : " + equationResponse);
                                 break;
                             }
                             case "exit": {
                                 client.write(buildClientExitACK(request.get("name")));
+                                String name = clients.getName(client);
+                                SocketAddress clientSocketAddress = client.getLocalAddress();
                                 client.close();
-                                System.out.println("Client has left: " + request.get("name"));
-                                serverLogger.log(Level.INFO, "Client disconnected. Name: " + request.get("name"));
+                                clients.removeClient(clientSocketAddress);
+                                System.out.println("Client has left: " + name);
+                                serverLogger.log(Level.INFO, "Client disconnected. Name: " + name);
                                 break;
                             }
                             default: {
                                 client.write(buildServerResponse("Unknown command"));
-                                serverLogger.log(Level.INFO, "Client \"" + request.get("name") + "\" entered unknown command: " + request.get("cmd"));  // TODO the request.get("name") doesn't properly return the client's name. How can we make this work?
+                                serverLogger.log(Level.INFO, "Client \"" + clients.getName(client) + "\" entered unknown command: " + request.get("cmd"));
                                 break;
                             }
                         }
@@ -206,6 +252,7 @@ public class TCPServer {
 
     /**
      * TODO: Description.
+     *
      * @param d TODO: Description.
      * @return TODO: Description.
      */
@@ -215,6 +262,7 @@ public class TCPServer {
 
     /**
      * TODO: Description.
+     *
      * @param op TODO: Description.
      * @return TODO: Description.
      */
@@ -224,8 +272,9 @@ public class TCPServer {
 
     /**
      * TODO: Description.
-     * @param equation  TODO: Description.
-     * @return  TODO: Description.
+     *
+     * @param equation TODO: Description.
+     * @return TODO: Description.
      */
     public String evaluateEquation(String equation) {
         String arg1 = "";
@@ -261,9 +310,8 @@ public class TCPServer {
             }
         }
 
-        if(errorMessage!="")
-        {
-            return(errorMessage);   // If error occured, return it instead of result
+        if (errorMessage != "") {
+            return (errorMessage);   // If error occured, return it instead of result
         }
 
         foundDecimal = false;       // Resets count for the second argument
@@ -292,9 +340,8 @@ public class TCPServer {
             }
         }
 
-        if(errorMessage!="")
-        {
-            return(errorMessage); // If error occured, return it instead of result
+        if (errorMessage != "") {
+            return (errorMessage); // If error occured, return it instead of result
         }
 
         // Try to parse floats from the arguments
