@@ -205,27 +205,31 @@ public class TCPServer {
     }
 
     /**
-     * TODO: Description.
-     * @param d TODO: Description.
-     * @return TODO: Description.
+     * Determines if a given character is a numerical digit. Used in parsing an input from client.
+     *
+     * @param d Character to be analyzed.
+     * @return True if the character is a digit, false otherwise.
      */
     public boolean isDigit(char d) {
         return d >= 48 && d <= 57;
     }
 
     /**
-     * TODO: Description.
-     * @param op TODO: Description.
-     * @return TODO: Description.
+     * Determines if a given character is an operation symbol supported by the program.
+     * The supported operations are multiplication, division, addition, subtraction, exponentiation, and modulo.
+     * 
+     * @param op Character to be analyzed.
+     * @return True if the character is a supported operation symbol, false otherwise.
      */
     public boolean isOperation(char op) {
-        return op == '*' || op == '/' || op == '%' || op == '^' || op == '+' || op == '-';
+        return op == '*' || op == '/' || op == '+' || op == '-' || op == '%' || op == '^';
     }
 
     /**
-     * TODO: Description.
-     * @param equation  TODO: Description.
-     * @return  TODO: Description.
+     * Takes in an equation command from the client and formulates a response. It will attempt to parse the equation and return the result, or an error message if unsuccessful.
+     * 
+     * @param equation  A string input from the client to be parsed and solved.
+     * @return  The result of the equation, or an error message if the equation couldn't be parsed or solved.
      */
     public String evaluateEquation(String equation) {
         String arg1 = "";
