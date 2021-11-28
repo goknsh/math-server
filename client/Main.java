@@ -25,12 +25,12 @@ public class Main {
 
         while (true) {
             System.out.println("\nEnter a simple equation. (Operators: *, /, +, -, ^, %, !)");
-            System.out.println("\nYou may send 'quit' or press Ctrl+C to quit.");
+            System.out.println("You may send 'quit' or press Ctrl+C to quit.");
             System.out.print(client.getName() + "@math-server> ");
 
             while (!reader.hasNextLine()) {
             }
-
+            // TODO: Make sure cases are covered and check the whitespace. Might want to comment some of these too, but IDK.
             String command = reader.nextLine();
             if ((command.getBytes(StandardCharsets.UTF_8)).length < 1024) {
                 switch (command) {
