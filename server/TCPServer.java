@@ -65,7 +65,7 @@ class ClientStore {
     /**
      * Removes a client from all the store.
      *
-     * @param key  Client to remove.
+     * @param key Client to remove.
      * @throws IOException If the socket is closed.
      */
     public void removeClient(SocketAddress key) throws IOException {
@@ -131,11 +131,16 @@ public class TCPServer {
      */
     public TCPServer(Integer port) throws Exception {
         // Creating handler for server logging, then adding it to the logger
-        Handler fileHandler = new FileHandler("./TCPServer.log", true);
-        serverLogger.addHandler(fileHandler);
-        fileHandler.setLevel(Level.ALL);
-        serverLogger.setLevel(Level.ALL);
-        serverLogger.setUseParentHandlers(false);
+        try {
+            Handler fileHandler = new FileHandler("./TCPServer.log", true);
+            serverLogger.addHandler(fileHandler);
+            fileHandler.setLevel(Level.ALL);
+            serverLogger.setLevel(Level.ALL);
+            serverLogger.setUseParentHandlers(false);
+        } catch (IOException e) {
+            System.out.println("Could not open TCPServer.log to write server logs.");
+            System.exit(1);
+        }
 
         Selector selector = Selector.open();
         ClientStore clients = new ClientStore();
@@ -266,7 +271,7 @@ public class TCPServer {
     /**
      * Determines if a given character is an operation symbol supported by the program.
      * The supported operations are multiplication, division, addition, subtraction, exponentiation, modulo, and factorial.
-     * 
+     *
      * @param op Character to be analyzed.
      * @return True if the character is a supported operation symbol, false otherwise.
      */
@@ -277,8 +282,8 @@ public class TCPServer {
     /**
      * Takes in an equation command from the client and formulates a response. It will attempt to parse the equation and return the result, or an error message if unsuccessful.
      *
-     * @param equation  A string input from the client to be parsed and solved.
-     * @return  The result of the equation, or an error message if the equation couldn't be parsed or solved.
+     * @param equation A string input from the client to be parsed and solved.
+     * @return The result of the equation, or an error message if the equation couldn't be parsed or solved.
      */
     public String evaluateEquation(String equation) {
         String arg1 = "";
@@ -314,9 +319,8 @@ public class TCPServer {
             }
         }
 
-        if(errorMessage!="")
-        {
-            return(errorMessage);   // If error occured, return it instead of result
+        if (errorMessage != "") {
+            return (errorMessage);   // If error occured, return it instead of result
         }
 
         foundDecimal = false;       // Resets count for the second argument
@@ -345,13 +349,13 @@ public class TCPServer {
             }
         }
 
-        if(operator == '!' && arg2 != "") {
+        if (operator == '!' && arg2 != "") {
             errorMessage = "Error - Found second argument for factorial. {" + arg2 + "} Please use only one integer argument, followed by '!'.";
         }
 
 
-        if(errorMessage!="") {
-            return(errorMessage); // If error occured, return it instead of result
+        if (errorMessage != "") {
+            return (errorMessage); // If error occured, return it instead of result
         }
 
         // Try to parse floats from the arguments
@@ -364,15 +368,14 @@ public class TCPServer {
             return errorMessage;
         }
 
-        if(operator != '!') {
+        if (operator != '!') {
             try {
                 argf2 = Float.parseFloat(arg2);
             } catch (Exception e) {
                 errorMessage = "Error - Failed to parse float from arg2. {" + e + "}";
                 return errorMessage;
             }
-        }
-        else{
+        } else {
             argf2 = 0f;
         }
 
@@ -387,11 +390,9 @@ public class TCPServer {
                 resultf = argf1 / argf2;
                 break;
             case '%':
-                if(argf2 == 0f)
-                {
+                if (argf2 == 0f) {
                     return "Undefined";
-                }
-                else{
+                } else {
                     resultf = argf1 % argf2;
                     break;
                 }
@@ -405,14 +406,13 @@ public class TCPServer {
                 resultf = argf1 - argf2;
                 break;
             case '!':
-                if(argf1 % 1 == 0 && argf1 >= 0){
+                if (argf1 % 1 == 0 && argf1 >= 0) {
                     resultf = 1.0f;
-                    for(int i = 1; i <= (int) argf1; i++){
-                        resultf = Math.round(resultf*i);
+                    for (int i = 1; i <= (int) argf1; i++) {
+                        resultf = Math.round(resultf * i);
                     }
                     break;
-                }
-                else{
+                } else {
                     errorMessage = "Error - The argument for factorial must be a positive integer >= 0. {" + argf1 + "}";
                     return errorMessage;
                 }

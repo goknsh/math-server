@@ -11,15 +11,16 @@ A single-threaded server that evaluates mathematical expressions.
 
 ## Requirements
 
-* Java SE 8u251 (`1.8.0_251`, build `08`)
+* [Java SE Development Kit 8u211](https://www.oracle.com/java/technologies/javase/javase8u211-later-archive-downloads.html)
+* [Java SE Runtime Environment 8u251](https://www.oracle.com/java/technologies/javase/javase8u211-later-archive-downloads.html)
 
 ## Docs
 
 The code has comments throughout. Additionally, we use JavaDoc to document the classes and functions. You can generate
-the JavaDoc with this command from the root of this project:
+the JavaDoc with this command:
 
 ```sh
-$ javadoc -private -splitindex -d .\docs\javadoc .\server\TCPServer.java .\server\Main.java .\client\TCPClient.java .\client\Main.java .\lib\Protocol.java
+$ make docs
 ```
 
 From there, a `docs/javadoc` directory will be created. You can then open `docs/javadoc/index.html` to browse the
@@ -30,10 +31,10 @@ documentation.
 The server is a single-threaded TCP server that evaluates mathematical expressions. All the server code is located in
 the `server` directory.
 
-The server may be started with this command from the root of this project:
+The server may be started with this command:
 
 ```sh
-$ javac .\server\Main.java ; java server.Main
+$ make start-server
 ```
 
 ## Client
@@ -41,10 +42,10 @@ $ javac .\server\Main.java ; java server.Main
 The client is a simple TCP client that sends mathematical expressions to be evaluated to the server and displays the
 server's response. All the client code is located in the `client` directory.
 
-The client may be started with this command from the root of this project:
+The client may be started with this command:
 
 ```sh
-$ javac .\client\Main.java ; java client.Main
+$ make start-client
 ```
 
 ## Logger

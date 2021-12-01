@@ -1,5 +1,6 @@
 package client;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
@@ -7,7 +8,7 @@ import java.util.Scanner;
  * Invokes TCPClient to establish a connection to the server, then creates an infinite loop, accepting and forwarding math commands to the TCPClient class.
  */
 public class Main {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         Scanner reader = new Scanner(System.in);
         System.out.println("                __  .__                                                      \n" +
                 "  _____ _____ _/  |_|  |__             ______ ______________  __ ___________ \n" +
@@ -30,8 +31,8 @@ public class Main {
 
             while (!reader.hasNextLine()) {
             }
-            // TODO: Make sure cases are covered and check the whitespace. Might want to comment some of these too, but IDK.
-            String command = reader.nextLine();
+
+            String command = reader.nextLine().trim();
             if ((command.getBytes(StandardCharsets.UTF_8)).length < 1024) {
                 switch (command) {
                     case "exit":
@@ -51,9 +52,13 @@ public class Main {
                         break;
                     }
                     default: {
-                        System.out.println("Response: " + client.buildAndSendMathCommand(command));
-                        break;
-
+                        try {
+                            System.out.println("Response: " + client.buildAndSendMathCommand(command));
+                            break;
+                        } catch (IOException e) {
+                            System.out.println("Could not read/write to server. This typically occurs if the server has been shut down. Try again later.");
+                            Runtime.getRuntime().halt(0);
+                        }
                     }
                 }
             } else {

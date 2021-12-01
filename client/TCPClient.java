@@ -71,9 +71,8 @@ public class TCPClient {
      * @param name Name of the client.
      * @param host Host of the server to communicate with.
      * @param port Port of the server to communicate with.
-     * @throws Exception If the server leaves abruptly and the client cannot read or send messages anymore.
      */
-    public TCPClient(String name, String host, Integer port) throws Exception {
+    public TCPClient(String name, String host, Integer port) {
         try {
             Map<String, String> clientHelloACK;
             Socket serverSocket = new Socket(host, port);
@@ -92,11 +91,15 @@ public class TCPClient {
                 Runtime.getRuntime().addShutdownHook(new ShutdownHook(this));
             } else {
                 serverSocket.close();
-                throw new Exception("Server sent incorrect acknowledgement");
+                System.out.println("Server sent incorrect acknowledgement. Try again later.");
+                Runtime.getRuntime().halt(1);
             }
         } catch (ConnectException e) {
             System.out.println("Could not connect to server. This typically occurs because the connection was refused remotely (e.g., no process is listening on the remote address/port).");
-            System.exit(1);
+            Runtime.getRuntime().halt(1);
+        } catch (IOException e) {
+            System.out.println("Could not read/write to server. This typically occurs if the server has been shut down. Try again later.");
+            Runtime.getRuntime().halt(1);
         }
     }
 
