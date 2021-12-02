@@ -50,17 +50,21 @@ class ShutdownHook extends Thread {
             SocketChannel client;
             Date initialConnect;
             String name;
-            System.out.println(this.server.clientStore.clients.size());
+            Long connectionTime;
             for (SocketAddress key : this.server.clientStore.clients.keySet()) {
                 client = this.server.clientStore.clients.get(key);
                 initialConnect = this.server.clientStore.getInitialConnectTime(client);
                 name = this.server.clientStore.getName(client);
+                connectionTime = this.server.calculateDuration(initialConnect);
                 client.close();
-                System.out.println(name + "'s socket closed...");
+                this.server.serverLogger.log(Level.INFO, "Forced disconnection with client \"" + name + "\". Duration of connection: " + connectionTime + " seconds.");
+                System.out.println("Client \"" + name + "'s socket closed... Duration: " + connectionTime + " seconds.");
             }
+            this.server.serverLogger.log(Level.INFO, "Shutting down server.");
             System.out.println("Server shut down successfully.");
         } catch (Exception e) {
             System.out.println("Error while shutting down server: " + e.getMessage());
+            this.server.serverLogger.log(Level.SEVERE, "Error in shutting down server. Exception: " + e);
         }
     }
 }
@@ -107,7 +111,6 @@ class ClientStore {
      * @throws IOException If the socket is closed.
      */
     public void addClient(SocketChannel key, String name) throws IOException {
-        System.out.println(key.getRemoteAddress() + " " + name);
         this.connectTimes.put(key.getRemoteAddress(), new Date());
         this.clients.put(key.getRemoteAddress(), key);
         this.names.put(key.getRemoteAddress(), name);
@@ -181,7 +184,7 @@ class ClientStore {
  * Class to accept connections and service future client requests.
  */
 public class TCPServer {
-    private static final Logger serverLogger = Logger.getLogger(TCPServer.class.getName());
+    public final Logger serverLogger = Logger.getLogger(TCPServer.class.getName());
 
     public final ClientStore clientStore;
 
@@ -236,16 +239,18 @@ public class TCPServer {
                         Map<String, String> request = Protocol.unmarshal(this.clientStore.removeCommand(client));
                         switch (request.get("cmd")) {
                             case "hello": {
+                                String remoteAddress = client.getRemoteAddress().toString();
                                 client.write(buildClientHelloACK(request.get("name")));
-                                System.out.println("Client has connected: " + request.get("name"));
+                                System.out.println("Client \"" + request.get("name") + "\" at IP/Port# {" + remoteAddress + "} connected to the server.");
                                 this.clientStore.addClient(client, request.get("name"));
-                                serverLogger.log(Level.INFO, "Client joined. Name: " + request.get("name"));
+                                serverLogger.log(Level.INFO, "Client \"" + request.get("name") + "\" connected. IP/Port#: {" + remoteAddress + "}");
                                 break;
                             }
                             case "math": {
                                 String equationResponse = evaluateEquation(request.get("eq"));
                                 client.write(buildServerResponse(equationResponse));
                                 serverLogger.log(Level.INFO, "Client \"" + this.clientStore.getName(client) + "\" entered equation : " + request.get("eq") + ". Response : " + equationResponse);
+                                System.out.println("Client \"" + this.clientStore.getName(client) + "\" entered equation : " + request.get("eq") + ". Response : " + equationResponse);
                                 break;
                             }
                             case "exit": {
@@ -253,15 +258,18 @@ public class TCPServer {
                                 String name = this.clientStore.getName(client);
                                 Date initialConnect = this.clientStore.getInitialConnectTime(client);
                                 SocketAddress clientSocketAddress = client.getRemoteAddress();
+                                Long connectionTime = calculateDuration(initialConnect);
                                 client.close();
                                 this.clientStore.removeClient(clientSocketAddress);
-                                System.out.println("Client has left: " + name);
-                                serverLogger.log(Level.INFO, "Client disconnected. Name: " + name);
+
+                                System.out.println("Client \"" + name + "\" disconnected. Duration: " + connectionTime + " seconds."); 
+                                serverLogger.log(Level.INFO, "Client \"" + name + "\" disconnected. Duration of connection: " + connectionTime + " seconds.");
                                 break;
                             }
                             default: {
                                 client.write(buildServerResponse("Unknown command"));
                                 serverLogger.log(Level.INFO, "Client \"" + this.clientStore.getName(client) + "\" entered unknown command: " + request.get("cmd"));
+                                System.out.println("Client \"" + this.clientStore.getName(client) + "\" entered unknown command: " + request.get("cmd"));
                                 break;
                             }
                         }
@@ -343,6 +351,16 @@ public class TCPServer {
      */
     public boolean isOperation(char op) {
         return op == '*' || op == '/' || op == '+' || op == '-' || op == '%' || op == '^' || op == '!';
+    }
+
+    /**
+     * Compares a Date value with the current time to return the number of seconds that has passed since then.
+     *
+     * @param startTime Date to be measured.
+     * @return The duration since startTime in seconds.
+     */
+    public long calculateDuration(Date startTime) {
+        return (System.currentTimeMillis() - startTime.getTime())/1000;
     }
 
     /**
@@ -488,5 +506,4 @@ public class TCPServer {
         }
         return Float.toString(resultf);
     }
-
 }
