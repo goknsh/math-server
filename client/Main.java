@@ -8,6 +8,9 @@ import java.util.Scanner;
  * Invokes TCPClient to establish a connection to the server, then creates an infinite loop, accepting and forwarding math commands to the TCPClient class.
  */
 public class Main {
+    private static final String SERVER_IP = "127.0.0.1";
+    private static final int PORT_NUMBER = 6789;
+
     public static void main(String[] args) {
         Scanner reader = new Scanner(System.in);
         System.out.println("                __  .__                                                      \n" +
@@ -21,7 +24,7 @@ public class Main {
         String name = reader.nextLine();
 
         System.out.println("Establishing connection...");
-        TCPClient client = new TCPClient(name, "127.0.0.1", 6789);
+        TCPClient client = new TCPClient(name, SERVER_IP, PORT_NUMBER);       // Creates TCP client with user name
         System.out.println("Connection established. Hello, " + name);
 
         while (true) {
@@ -29,6 +32,7 @@ public class Main {
             System.out.println("You may send 'quit' or press Ctrl+C to quit.");
             System.out.print(client.getName() + "@math-server> ");
 
+            // TODO
             while (!reader.hasNextLine()) {
             }
 
@@ -39,6 +43,7 @@ public class Main {
                     case "e":
                     case "quit":
                     case "q": {
+                        // Closes the connection with client
                         reader.close();
                         System.exit(0);
                         break;
@@ -46,12 +51,14 @@ public class Main {
                     case "help":
                     case "h":
                     case "usage": {
+                        // Help message
                         System.out.println("exit or quit to close the program\n" +
-                                "any other unrecognized command is considered a mathematical expression and sent to the server\n" +
+                                "Any other unrecognized command is considered a mathematical expression and sent to the server\n" +
                                 "help or usage to print this message\n");
                         break;
                     }
                     default: {
+                        // Any other unrecognized command is considered a mathematical expression and sent to the server
                         try {
                             System.out.println("Response: " + client.buildAndSendMathCommand(command));
                             break;
