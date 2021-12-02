@@ -237,41 +237,46 @@ public class TCPServer {
 
                     if (this.clientStore.isCommandComplete(client)) {
                         Map<String, String> request = Protocol.unmarshal(this.clientStore.removeCommand(client));
-                        switch (request.get("cmd")) {
-                            case "hello": {
-                                String remoteAddress = client.getRemoteAddress().toString();
-                                client.write(buildClientHelloACK(request.get("name")));
-                                System.out.println("Client \"" + request.get("name") + "\" at IP/Port# {" + remoteAddress + "} connected to the server.");
-                                this.clientStore.addClient(client, request.get("name"));
-                                serverLogger.log(Level.INFO, "Client \"" + request.get("name") + "\" connected. IP/Port#: {" + remoteAddress + "}");
-                                break;
-                            }
-                            case "math": {
-                                String equationResponse = evaluateEquation(request.get("eq"));
-                                client.write(buildServerResponse(equationResponse));
-                                serverLogger.log(Level.INFO, "Client \"" + this.clientStore.getName(client) + "\" entered equation : " + request.get("eq") + ". Response : " + equationResponse);
-                                System.out.println("Client \"" + this.clientStore.getName(client) + "\" entered equation : " + request.get("eq") + ". Response : " + equationResponse);
-                                break;
-                            }
-                            case "exit": {
-                                client.write(buildClientExitACK(request.get("name")));
-                                String name = this.clientStore.getName(client);
-                                Date initialConnect = this.clientStore.getInitialConnectTime(client);
-                                SocketAddress clientSocketAddress = client.getRemoteAddress();
-                                Long connectionTime = calculateDuration(initialConnect);
-                                client.close();
-                                this.clientStore.removeClient(clientSocketAddress);
+                        try{
+                            switch (request.get("cmd")) {
+                                case "hello": {
+                                    String remoteAddress = client.getRemoteAddress().toString();
+                                    client.write(buildClientHelloACK(request.get("name")));
+                                    System.out.println("Client \"" + request.get("name") + "\" at IP/Port# {" + remoteAddress + "} connected to the server.");
+                                    this.clientStore.addClient(client, request.get("name"));
+                                    serverLogger.log(Level.INFO, "Client \"" + request.get("name") + "\" connected. IP/Port#: {" + remoteAddress + "}");
+                                    break;
+                                }
+                                case "math": {
+                                    String equationResponse = evaluateEquation(request.get("eq"));
+                                    client.write(buildServerResponse(equationResponse));
+                                    serverLogger.log(Level.INFO, "Client \"" + this.clientStore.getName(client) + "\" entered equation : " + request.get("eq") + ". Response : " + equationResponse);
+                                    System.out.println("Client \"" + this.clientStore.getName(client) + "\" entered equation : " + request.get("eq") + ". Response : " + equationResponse);
+                                    break;
+                                }
+                                case "exit": {
+                                    client.write(buildClientExitACK(request.get("name")));
+                                    String name = this.clientStore.getName(client);
+                                    Date initialConnect = this.clientStore.getInitialConnectTime(client);
+                                    SocketAddress clientSocketAddress = client.getRemoteAddress();
+                                    Long connectionTime = calculateDuration(initialConnect);
+                                    client.close();
+                                    this.clientStore.removeClient(clientSocketAddress);
 
-                                System.out.println("Client \"" + name + "\" disconnected. Duration: " + connectionTime + " seconds."); 
-                                serverLogger.log(Level.INFO, "Client \"" + name + "\" disconnected. Duration of connection: " + connectionTime + " seconds.");
-                                break;
+                                    System.out.println("Client \"" + name + "\" disconnected. Duration: " + connectionTime + " seconds."); 
+                                    serverLogger.log(Level.INFO, "Client \"" + name + "\" disconnected. Duration of connection: " + connectionTime + " seconds.");
+                                    break;
+                                }
+                                default: {
+                                    client.write(buildServerResponse("Unknown command"));
+                                    serverLogger.log(Level.INFO, "Client \"" + this.clientStore.getName(client) + "\" entered unknown command: " + request.get("cmd"));
+                                    System.out.println("Client \"" + this.clientStore.getName(client) + "\" entered unknown command: " + request.get("cmd"));
+                                    break;
+                                }
                             }
-                            default: {
-                                client.write(buildServerResponse("Unknown command"));
-                                serverLogger.log(Level.INFO, "Client \"" + this.clientStore.getName(client) + "\" entered unknown command: " + request.get("cmd"));
-                                System.out.println("Client \"" + this.clientStore.getName(client) + "\" entered unknown command: " + request.get("cmd"));
-                                break;
-                            }
+                        } catch (NullPointerException e) {
+                            client.write(buildServerResponse("Invalid command format"));
+                            serverLogger.log(Level.INFO, "Client \"" + this.clientStore.getName(client) + "\" sent an invalid command format: " + Protocol.marshal(request));
                         }
                     }
                 }
