@@ -447,68 +447,68 @@ public class TCPServer {
             return (errorMessage); // If error occured, return it instead of result
         }
 
-        // Try to parse floats from the arguments
-        float argf1, argf2;
+        // Try to parse doubles from the arguments
+        double argd1, argd2;
 
         try {
-            argf1 = Float.parseFloat(arg1);
+            argd1 = Double.parseDouble(arg1);
         } catch (Exception e) {
-            errorMessage = "Error - Failed to parse float from arg1. {" + e + "}";
+            errorMessage = "Error - Failed to parse double from arg1. {" + e + "}";
             return errorMessage;
         }
 
         if (operator != '!') {
             try {
-                argf2 = Float.parseFloat(arg2);
+                argd2 = Double.parseDouble(arg2);
             } catch (Exception e) {
-                errorMessage = "Error - Failed to parse float from arg2. {" + e + "}";
+                errorMessage = "Error - Failed to parse double from arg2. {" + e + "}";
                 return errorMessage;
             }
         } else {
-            argf2 = 0f;
+            argd2 = 0;
         }
 
-        float resultf = 0;
+        double resultd = 0;
 
         // Perform operation based on operator
         switch (operator) {
             case '*':
-                resultf = argf1 * argf2;
+                resultd = argd1 * argd2;
                 break;
             case '/':
-                resultf = argf1 / argf2;
+                resultd = argd1 / argd2;
                 break;
             case '%':
-                if (argf2 == 0f) {
+                if (argd2 == 0) {
                     return "Undefined";
                 } else {
-                    resultf = argf1 % argf2;
+                    resultd = argd1 % argd2;
                     break;
                 }
             case '^':
-                resultf = (float) Math.pow(argf1, argf2);
+                resultd = Math.pow(argd1, argd2);
                 break;
             case '+':
-                resultf = argf1 + argf2;
+                resultd = argd1 + argd2;
                 break;
             case '-':
-                resultf = argf1 - argf2;
+                resultd = argd1 - argd2;
                 break;
             case '!':
-                if (argf1 % 1 == 0 && argf1 >= 0) {
-                    resultf = 1.0f;
-                    for (int i = 1; i <= (int) argf1; i++) {
-                        resultf = Math.round(resultf * i);
+                if (argd1 % 1 == 0 && argd1 >= 0) {
+                    resultd = 1;
+                    for (int i = 1; i <= (int) argd1; i++) {
+                        resultd = Math.round(resultd * i);
                     }
                     break;
                 } else {
-                    errorMessage = "Error - The argument for factorial must be a positive integer >= 0. {" + argf1 + "}";
+                    errorMessage = "Error - The argument for factorial must be a positive integer >= 0. {" + argd1 + "}";
                     return errorMessage;
                 }
             default:
                 errorMessage = "Error - Unrecognized operator in evaluation step. {" + operator + "}";
                 return errorMessage;
         }
-        return Float.toString(resultf);
+        return Double.toString(resultd);
     }
 }
