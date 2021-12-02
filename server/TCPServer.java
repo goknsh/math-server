@@ -214,6 +214,7 @@ public class TCPServer {
         server.bind(new InetSocketAddress(port));
         server.configureBlocking(false);
         server.register(selector, SelectionKey.OP_ACCEPT);
+        serverLogger.log(Level.INFO, "Server is online and listening to connections on port " + port);
         System.out.println("Server listening to connections on port " + port);
 
         Runtime.getRuntime().addShutdownHook(new ShutdownHook(this));
