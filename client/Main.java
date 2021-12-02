@@ -24,7 +24,8 @@ public class Main {
         String name = reader.nextLine();
 
         System.out.println("Establishing connection...");
-        TCPClient client = new TCPClient(name, SERVER_IP, PORT_NUMBER);       // Creates TCP client with user name
+        // Creates TCP client that connects to the SERVER_IP at PORT_NUMBER
+        TCPClient client = new TCPClient(name, SERVER_IP, PORT_NUMBER);
         System.out.println("Connection established. Hello, " + name);
 
         while (true) {
@@ -32,7 +33,7 @@ public class Main {
             System.out.println("You may send 'quit' or press Ctrl+C to quit.");
             System.out.print(client.getName() + "@math-server> ");
 
-            // TODO
+            // Handle edge case where Java looks at reading input where none exists while running the shutdown hook if this line were not present
             while (!reader.hasNextLine()) {
             }
 

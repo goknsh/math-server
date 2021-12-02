@@ -51,6 +51,7 @@ class ShutdownHook extends Thread {
             Date initialConnect;
             String name;
             long connectionTime;
+            // For each client in ClientStore, close socket and log information
             for (SocketAddress key : this.server.clientStore.clients.keySet()) {
                 client = this.server.clientStore.clients.get(key);
                 initialConnect = this.server.clientStore.getInitialConnectTime(client);
@@ -213,7 +214,7 @@ public class TCPServer {
             System.exit(1);
         }
 
-        // TODO
+        // Setup non-blocking IO
         Selector selector = Selector.open();
         this.clientStore = new ClientStore();
         ServerSocketChannel server = ServerSocketChannel.open();
@@ -226,25 +227,31 @@ public class TCPServer {
         Runtime.getRuntime().addShutdownHook(new ShutdownHook(this));
         System.out.println("Press Ctrl+C to gracefully shut down server");
 
-        // TODO
         while (true) {
+            // Find channels the server needs to handle
             selector.select();
             Set<SelectionKey> keys = selector.selectedKeys();
             Iterator<SelectionKey> i = keys.iterator();
             while (i.hasNext()) {
                 SelectionKey key = i.next();
 
+                // Accept a new connection, setup non-blocking IO, wait for a read event
                 if (key.isAcceptable()) {
                     SocketChannel client = ((ServerSocketChannel) key.channel()).accept();
                     client.configureBlocking(false);
                     client.register(selector, SelectionKey.OP_READ);
                 }
+                // Need to read from client
                 if (key.isReadable()) {
                     SocketChannel client = (SocketChannel) key.channel();
+                    // Read 2048 bytes into buffer, then convert to string
                     String command = this.readFromBuffer(client, 2048);
+                    // Inform client store about this command
                     this.clientStore.addCommand(client, command);
 
+                    // If command is complete (new-line terminated), handle command
                     if (this.clientStore.isCommandComplete(client)) {
+                        // Parse request
                         Map<String, String> request = Protocol.unmarshal(this.clientStore.removeCommand(client));
                         try {
                             switch (request.get("cmd")) {
@@ -271,7 +278,7 @@ public class TCPServer {
                                     String name = this.clientStore.getName(client);
                                     Date initialConnect = this.clientStore.getInitialConnectTime(client);
                                     SocketAddress clientSocketAddress = client.getRemoteAddress();
-                                    Long connectionTime = calculateDuration(initialConnect);
+                                    long connectionTime = calculateDuration(initialConnect);
                                     client.close();
                                     this.clientStore.removeClient(clientSocketAddress);
 
@@ -288,11 +295,13 @@ public class TCPServer {
                                 }
                             }
                         } catch (NullPointerException e) {
+                            // Could happen if a client does not provide an expected key
                             client.write(buildServerResponse("Invalid command format"));
                             serverLogger.log(Level.INFO, "Client \"" + this.clientStore.getName(client) + "\" sent an invalid command format: " + Protocol.marshal(request));
                         }
                     }
                 }
+                // Channel handling complete, move onto next one
                 i.remove();
             }
         }
