@@ -213,17 +213,20 @@ public class TCPServer {
             System.exit(1);
         }
 
+        // TODO
         Selector selector = Selector.open();
         this.clientStore = new ClientStore();
         ServerSocketChannel server = ServerSocketChannel.open();
         server.bind(new InetSocketAddress(port));
         server.configureBlocking(false);
         server.register(selector, SelectionKey.OP_ACCEPT);
+        serverLogger.log(Level.INFO, "Server is online and listening to connections on port " + port);
         System.out.println("Server listening to connections on port " + port);
 
         Runtime.getRuntime().addShutdownHook(new ShutdownHook(this));
         System.out.println("Press Ctrl+C to gracefully shut down server");
 
+        // TODO
         while (true) {
             selector.select();
             Set<SelectionKey> keys = selector.selectedKeys();
@@ -246,6 +249,7 @@ public class TCPServer {
                         try {
                             switch (request.get("cmd")) {
                                 case "hello": {
+                                    // Open connection with client
                                     String remoteAddress = client.getRemoteAddress().toString();
                                     client.write(buildClientHelloACK(request.get("name")));
                                     System.out.println("Client \"" + request.get("name") + "\" at IP/Port# {" + remoteAddress + "} connected to the server.");
@@ -254,6 +258,7 @@ public class TCPServer {
                                     break;
                                 }
                                 case "math": {
+                                    // Evaluate equation from client
                                     String equationResponse = evaluateEquation(request.get("eq"));
                                     client.write(buildServerResponse(equationResponse));
                                     serverLogger.log(Level.INFO, "Client \"" + this.clientStore.getName(client) + "\" entered equation : " + request.get("eq") + ". Response : " + equationResponse);
@@ -261,6 +266,7 @@ public class TCPServer {
                                     break;
                                 }
                                 case "exit": {
+                                    // Close connection with client
                                     client.write(buildClientExitACK(request.get("name")));
                                     String name = this.clientStore.getName(client);
                                     Date initialConnect = this.clientStore.getInitialConnectTime(client);
@@ -274,6 +280,7 @@ public class TCPServer {
                                     break;
                                 }
                                 default: {
+                                    // Unknown command
                                     client.write(buildServerResponse("Unknown command"));
                                     serverLogger.log(Level.INFO, "Client \"" + this.clientStore.getName(client) + "\" entered unknown command: " + request.get("cmd"));
                                     System.out.println("Client \"" + this.clientStore.getName(client) + "\" entered unknown command: " + request.get("cmd"));
