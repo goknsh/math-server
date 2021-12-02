@@ -12,6 +12,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -20,6 +21,49 @@ import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+/**
+ * Class (shutdown hook) to gracefully closes all clients, logs relevant information, and shuts down the server.
+ */
+class ShutdownHook extends Thread {
+    /**
+     * Server on which the shutdown hook is to be executed.
+     */
+    private TCPServer server;
+
+    /**
+     * Constructor for this class, simply stores the TCPServer class so that it can close all the client sockets and log relevant information.
+     *
+     * @param server Server on which the shutdown hook is to be executed.
+     */
+    public ShutdownHook(TCPServer server) {
+        this.server = server;
+    }
+
+    /**
+     * Close all client sockets and log relevant information.
+     */
+    public void run() {
+        try {
+            System.out.println("\n\nServer shutting down...");
+
+            SocketChannel client;
+            Date initialConnect;
+            String name;
+            System.out.println(this.server.clientStore.clients.size());
+            for (SocketAddress key : this.server.clientStore.clients.keySet()) {
+                client = this.server.clientStore.clients.get(key);
+                initialConnect = this.server.clientStore.getInitialConnectTime(client);
+                name = this.server.clientStore.getName(client);
+                client.close();
+                System.out.println(name + "'s socket closed...");
+            }
+            System.out.println("Server shut down successfully.");
+        } catch (Exception e) {
+            System.out.println("Error while shutting down server: " + e.getMessage());
+        }
+    }
+}
 
 /**
  * Class to store data about clients and unfinished commands from clients.
@@ -38,8 +82,12 @@ class ClientStore {
     /**
      * <code>SocketAddress</code>es are mapped to their <code>SocketChannel</code>, used in the ShutdownHook to cleanly close client connections.
      */
-
     public Map<SocketAddress, SocketChannel> clients;
+
+    /**
+     * <code>SocketAddress</code>es are mapped to the <code>Date</code> the client's initial connection time.
+     */
+    public Map<SocketAddress, Date> connectTimes;
 
     /**
      * Constructor for this class, simply creates a new <code>HashMap</code> to store <code>SocketAddress</code> mapped to a <code>String</code>.
@@ -48,30 +96,42 @@ class ClientStore {
         this.commands = new HashMap<>();
         this.names = new HashMap<>();
         this.clients = new HashMap<>();
+        this.connectTimes = new HashMap<>();
     }
 
     /**
-     * Adds a client to the store. Stores the <code>SocketChannel</code> and the client's name.
+     * Adds a client to the store. Stores the <code>SocketChannel</code>, initial connect time, and the client's name.
      *
-     * @param key  Client to which the name and <code>SocketChannel</code> is associated.
+     * @param key  Client to which the name, initial connect time, and <code>SocketChannel</code> is associated.
      * @param name Name of the client.
      * @throws IOException If the socket is closed.
      */
     public void addClient(SocketChannel key, String name) throws IOException {
-        this.clients.put(key.getLocalAddress(), key);
-        this.names.put(key.getLocalAddress(), name);
+        System.out.println(key.getRemoteAddress() + " " + name);
+        this.connectTimes.put(key.getRemoteAddress(), new Date());
+        this.clients.put(key.getRemoteAddress(), key);
+        this.names.put(key.getRemoteAddress(), name);
     }
 
     /**
-     * Removes a client from all the store.
+     * Removes a client from all the stores.
      *
      * @param key Client to remove.
-     * @throws IOException If the socket is closed.
      */
-    public void removeClient(SocketAddress key) throws IOException {
+    public void removeClient(SocketAddress key) {
+        this.connectTimes.remove(key);
         this.clients.remove(key);
         this.names.remove(key);
         this.commands.remove(key);
+    }
+
+    /**
+     * @param key Client whose initial connect time you would like to retrieve.
+     * @return The initial connect time of the client.
+     * @throws IOException If the socket is closed.
+     */
+    public Date getInitialConnectTime(SocketChannel key) throws IOException {
+        return this.connectTimes.get(key.getRemoteAddress());
     }
 
     /**
@@ -80,7 +140,7 @@ class ClientStore {
      * @throws IOException If the socket is closed.
      */
     public String getName(SocketChannel key) throws IOException {
-        return this.names.get(key.getLocalAddress());
+        return this.names.get(key.getRemoteAddress());
     }
 
     /**
@@ -91,7 +151,7 @@ class ClientStore {
      * @throws IOException If the socket is closed.
      */
     public void addCommand(SocketChannel key, String value) throws IOException {
-        this.commands.merge(key.getLocalAddress(), value, (a, b) -> a + b);
+        this.commands.merge(key.getRemoteAddress(), value, (a, b) -> a + b);
     }
 
     /**
@@ -102,7 +162,7 @@ class ClientStore {
      * @throws IOException If the socket is closed.
      */
     public String removeCommand(SocketChannel key) throws IOException {
-        return this.commands.remove(key.getLocalAddress());
+        return this.commands.remove(key.getRemoteAddress());
     }
 
     /**
@@ -113,7 +173,7 @@ class ClientStore {
      * @throws IOException If the socket is closed.
      */
     public Boolean isCommandComplete(SocketChannel key) throws IOException {
-        return this.commands.get(key.getLocalAddress()).endsWith("\n");
+        return this.commands.get(key.getRemoteAddress()).endsWith("\n");
     }
 }
 
@@ -122,6 +182,8 @@ class ClientStore {
  */
 public class TCPServer {
     private static final Logger serverLogger = Logger.getLogger(TCPServer.class.getName());
+
+    public final ClientStore clientStore;
 
     /**
      * Constructor for this class, starts a TCP server, then creates an infinite loop to listen and respond to client messages.
@@ -143,12 +205,15 @@ public class TCPServer {
         }
 
         Selector selector = Selector.open();
-        ClientStore clients = new ClientStore();
+        this.clientStore = new ClientStore();
         ServerSocketChannel server = ServerSocketChannel.open();
         server.bind(new InetSocketAddress(port));
         server.configureBlocking(false);
         server.register(selector, SelectionKey.OP_ACCEPT);
         System.out.println("Server listening to connections on port " + port);
+
+        Runtime.getRuntime().addShutdownHook(new ShutdownHook(this));
+        System.out.println("Press Ctrl+C to gracefully shut down server");
 
         while (true) {
             selector.select();
@@ -165,37 +230,38 @@ public class TCPServer {
                 if (key.isReadable()) {
                     SocketChannel client = (SocketChannel) key.channel();
                     String command = this.readFromBuffer(client, 2048);
-                    clients.addCommand(client, command);
+                    this.clientStore.addCommand(client, command);
 
-                    if (clients.isCommandComplete(client)) {
-                        Map<String, String> request = Protocol.unmarshal(clients.removeCommand(client));
+                    if (this.clientStore.isCommandComplete(client)) {
+                        Map<String, String> request = Protocol.unmarshal(this.clientStore.removeCommand(client));
                         switch (request.get("cmd")) {
                             case "hello": {
                                 client.write(buildClientHelloACK(request.get("name")));
                                 System.out.println("Client has connected: " + request.get("name"));
-                                clients.addClient(client, request.get("name"));
+                                this.clientStore.addClient(client, request.get("name"));
                                 serverLogger.log(Level.INFO, "Client joined. Name: " + request.get("name"));
                                 break;
                             }
                             case "math": {
                                 String equationResponse = evaluateEquation(request.get("eq"));
                                 client.write(buildServerResponse(equationResponse));
-                                serverLogger.log(Level.INFO, "Client \"" + clients.getName(client) + "\" entered equation : " + request.get("eq") + ". Response : " + equationResponse);
+                                serverLogger.log(Level.INFO, "Client \"" + this.clientStore.getName(client) + "\" entered equation : " + request.get("eq") + ". Response : " + equationResponse);
                                 break;
                             }
                             case "exit": {
                                 client.write(buildClientExitACK(request.get("name")));
-                                String name = clients.getName(client);
-                                SocketAddress clientSocketAddress = client.getLocalAddress();
+                                String name = this.clientStore.getName(client);
+                                Date initialConnect = this.clientStore.getInitialConnectTime(client);
+                                SocketAddress clientSocketAddress = client.getRemoteAddress();
                                 client.close();
-                                clients.removeClient(clientSocketAddress);
+                                this.clientStore.removeClient(clientSocketAddress);
                                 System.out.println("Client has left: " + name);
                                 serverLogger.log(Level.INFO, "Client disconnected. Name: " + name);
                                 break;
                             }
                             default: {
                                 client.write(buildServerResponse("Unknown command"));
-                                serverLogger.log(Level.INFO, "Client \"" + clients.getName(client) + "\" entered unknown command: " + request.get("cmd"));
+                                serverLogger.log(Level.INFO, "Client \"" + this.clientStore.getName(client) + "\" entered unknown command: " + request.get("cmd"));
                                 break;
                             }
                         }

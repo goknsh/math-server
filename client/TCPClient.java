@@ -43,7 +43,7 @@ class ShutdownHook extends Thread {
                 System.out.println("Quit successfully. Server says: " + clientExitACK.get("resp"));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Error while shutting down client: " + e.getMessage());
         }
     }
 }
