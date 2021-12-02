@@ -50,7 +50,7 @@ class ShutdownHook extends Thread {
             SocketChannel client;
             Date initialConnect;
             String name;
-            Long connectionTime;
+            long connectionTime;
             for (SocketAddress key : this.server.clientStore.clients.keySet()) {
                 client = this.server.clientStore.clients.get(key);
                 initialConnect = this.server.clientStore.getInitialConnectTime(client);
@@ -184,8 +184,14 @@ class ClientStore {
  * Class to accept connections and service future client requests.
  */
 public class TCPServer {
+    /**
+     * Holds the logging object so logs can be configured and added to the file.
+     */
     public final Logger serverLogger = Logger.getLogger(TCPServer.class.getName());
 
+    /**
+     * Holds a list of clients connected to the server and their relevant information,
+     */
     public final ClientStore clientStore;
 
     /**
@@ -237,7 +243,7 @@ public class TCPServer {
 
                     if (this.clientStore.isCommandComplete(client)) {
                         Map<String, String> request = Protocol.unmarshal(this.clientStore.removeCommand(client));
-                        try{
+                        try {
                             switch (request.get("cmd")) {
                                 case "hello": {
                                     String remoteAddress = client.getRemoteAddress().toString();
@@ -263,7 +269,7 @@ public class TCPServer {
                                     client.close();
                                     this.clientStore.removeClient(clientSocketAddress);
 
-                                    System.out.println("Client \"" + name + "\" disconnected. Duration: " + connectionTime + " seconds."); 
+                                    System.out.println("Client \"" + name + "\" disconnected. Duration: " + connectionTime + " seconds.");
                                     serverLogger.log(Level.INFO, "Client \"" + name + "\" disconnected. Duration of connection: " + connectionTime + " seconds.");
                                     break;
                                 }
@@ -365,7 +371,7 @@ public class TCPServer {
      * @return The duration since startTime in seconds.
      */
     public long calculateDuration(Date startTime) {
-        return (System.currentTimeMillis() - startTime.getTime())/1000;
+        return (System.currentTimeMillis() - startTime.getTime()) / 1000;
     }
 
     /**
